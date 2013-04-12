@@ -3,32 +3,41 @@
   (:import [com.jelastic JelasticService] 
            [org.apache.tools.ant Project]))
 
+(defn log [& s] (apply println s))
+
 (def ant-project-proxy 
   (proxy [Project] [] 
-    (log [s t] (println s))))
+    (log [s t] (log s))))
 
 (defn jelastic-service
-  [args] 
-  (let [service (JelasticService. ant-project-proxy)]
-    (doto service
-        (.setApiHoster (:apihoster args))
-        (.setContext (:context args))
-        (.setEnvironment (:environment args)))
-    service))
+  [{:keys [apihoster context environment]}]
+  (doto (JelasticService. ant-project-proxy)
+    (.setApiHoster apihoster)
+    (.setContext context)
+    (.setEnvironment environment)))
 
 (defn authenticate
-  [service email password]
+  [service {:keys [email password]}]
   (let [resp (.authentication service email password)]
     (if (zero? (.getResult resp)) 
-      resp
-      false)))
+      
+      ((log "Authentication : SUCCESS")
+       (log "       Session : " (.getSession resp))
+       (log "           Uid : " (.getUid resp))
+       resp)
+     
+      ((log "Authentication : FAILED")
+       (log "        Error  : " (.getError resp)) 
+       (throw (Exception. (.getError resp)))))))
 
 (defn upload 
   [project] 
   "Upload the current project to Jelastic"
-  (let [conf (:jelastic project)
-        service (jelastic-service conf)]
-    (authenticate service (:email conf) (:password conf))))
+  (let [conf    (:jelastic project)
+        service (jelastic-service conf)
+        auth    (authenticate service conf)]
+
+    ))
 
 
 (defn deploy 
