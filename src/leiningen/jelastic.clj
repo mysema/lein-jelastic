@@ -3,7 +3,7 @@
   (:import [com.jelastic JelasticService] 
            [org.apache.tools.ant Project]))
 
-(defn log [& s] (apply println s))
+(defn log [& s] (println (apply str s)))
 
 (def ant-project-proxy 
   (proxy [Project] [] 
@@ -28,10 +28,15 @@
           (log "        Error  : " (.getError resp)) 
           (throw (Exception. (.getError resp)))))))
 
-(defn upload
+(defn upload-file
   [service auth dir filename]
   (doto service (.setDir dir) (.setFilename filename))
-  (let [upload-resp (.upload service auth)]
+  (if-let [upload-resp (try 
+                         (.upload service auth) 
+                         (catch Exception e
+                           (do (log "File upload : FAILED")
+                               (log "File does not exist : " dir filename)
+                               nil)))]
     (if (zero? (.getResult upload-resp))
       (do (log "File upload : SUCCESS")
           (log "   File url : " (.getFile upload-resp))
@@ -40,29 +45,35 @@
           (log "      Error : " (.getError upload-resp))
           (throw (Exception. (.getError upload-resp)))))))
        
-(defn upload-task
+(defn upload
   [project] 
   "Upload the current project to Jelastic"
-  (let [conf    (:jelastic project)
-        service (jelastic-service conf)
-        auth    (authenticate service conf)]
+  (let [{:keys [apihoster 
+                context 
+                environment
+                email
+                password]} (:jelastic project)
+        path    (str (:target-path project) "/")
+        ; TODO Is there better way to get project output?
+        file    (str (:name project) "-" (:version project) ".war")
+        service (jelastic-service apihoster context environment)
+        auth    (authenticate service email password)]
+    (upload-file service auth path file)))
 
-    ))
 
-
-(defn deploy-task
+(defn deploy
   [project] 
   "Deploy the current project to Jelastic")
 
 
 (defn jelastic
   "Manage Jelastic service"
-  {:help-arglists '([upload-task deploy-task])
-   :subtasks [#'upload-task #'deploy-task]}
+  {:help-arglists '([upload deploy])
+   :subtasks [#'upload #'deploy]}
   ([project]
    (println (help-for "jelastic")))
   ([project subtask & args]
    (case subtask
-     "upload" (apply upload-task project args))))
+     "upload" (apply upload project args))))
 
     
