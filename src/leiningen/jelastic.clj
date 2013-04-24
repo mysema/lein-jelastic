@@ -102,7 +102,6 @@
   ([project subtask & args]
    (with-auth project
      (fn [service auth]
-       (println "subtask is " subtask)
        (case subtask
          "upload" (upload project service auth)
          "deploy" (deploy project service auth))))))
