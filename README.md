@@ -1,25 +1,40 @@
 # lein-jelastic
 
-A Leiningen plugin to do many wonderful things.
+A Leiningen plugin for [Jelastic][1].
 
-## Usage
+## Configuration
 
-FIXME: Use this for user-level plugins:
+To use lein-jelastic, you have to add following configuration to your
+`project.clj` file.
 
-Put `[lein-jelastic "0.1.0-SNAPSHOT"]` into the `:plugins` vector of your
-`:user` profile, or if you are on Leiningen 1.x do `lein plugin install
-lein-jelastic 0.1.0-SNAPSHOT`.
+```clojure
+:plugins [[lein-jelastic "0.1.0"]]
 
-FIXME: Use this for project-level plugins:
+:jelastic {:apihoster "app.jelastic.provider.com"
+           :email "your@mail.com"
+           :password "XXXXXXXX" 
+           :environment "myapp"
+           ; Optional context
+           ; :context "mycontext"
+           }
+```
 
-Put `[lein-jelastic "0.1.0-SNAPSHOT"]` into the `:plugins` vector of your project.clj.
+## Upload
 
-FIXME: and add an example usage that actually makes sense:
+To upload a current target to jelastic
 
-    $ lein jelastic
+    $ lein jelastic upload
+    
+## Deploy
+
+To upload and deploy the current target
+
+    $ lein jelastic deploy
 
 ## License
 
 Copyright © 2013 FIXME
 
 Distributed under the Eclipse Public License, the same as Clojure.
+
+[1]: http://www.jelastic.com
