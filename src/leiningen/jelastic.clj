@@ -5,6 +5,8 @@
 
 (defn log [& s] (println (apply str s)))
 
+(def line (apply str (repeat 60 "-")))
+
 (def ant-project-proxy 
   (proxy [Project] [] 
     (log [s t] (log s))))
@@ -18,44 +20,47 @@
 
 (defn authenticate
   [service email password]
+  (log line)
   (let [resp (.authentication service email password)]
     (if (zero? (.getResult resp)) 
-      (do (log "Authentication : SUCCESS")
-          (log "       Session : " (.getSession resp))
-          (log "           Uid : " (.getUid resp))
+      (do (log "Authentication      : SUCCESS")
+          (log "Session             : " (.getSession resp))
+          (log "Uid                 : " (.getUid resp))
           resp)
-      (do (log "Authentication : FAILED")
-          (log "        Error  : " (.getError resp)) 
+      (do (log "Authentication      : FAILED")
+          (log "Error               : " (.getError resp)) 
           (throw (Exception. (.getError resp)))))))
 
 (defn upload-file
   [service auth dir filename]
   (doto service (.setDir dir) (.setFilename filename))
-  (if-let [resp (try 
+  (log line)
+  (when-let [resp (try 
                   (.upload service auth) 
                   (catch Exception e
                     (do (log "File upload         : FAILED")
                         (log "File does not exist : " dir filename)
                         nil)))]
     (if (zero? (.getResult resp))
-      (do (log "File upload : SUCCESS")
-          (log "   File url : " (.getFile resp))
-          (log "  File size : " (.getSize resp))
+      (do (log "File upload          : SUCCESS")
+          (log "File url             : " (.getFile resp))
+          (log "File size            : " (.getSize resp))
           resp)
-      (do (log "File upload : FAILED")
-          (log "      Error : " (.getError resp))
+      (do (log "File upload          : FAILED")
+          (log "Error                : " (.getError resp))
           nil))))
 
 (defn register-file
   [service auth upload-resp]
+  (log line)
   (let [resp (.createObject service upload-resp auth)]
     (if (zero? (.getResult resp))
-      (do (log "File registration : SUCCESS")
-          (log "  Registration ID : " (-> resp .getResponse .getObject .getId))
-          (log "     Developer ID : " (-> resp .getResponse .getObject .getDeveloper))
+      (do (log "File registration    : SUCCESS")
+          (log "Registration ID      : " (-> resp .getResponse .getObject .getId))
+          (log "Developer ID         : " (-> resp .getResponse .getObject .getDeveloper))
           resp)
-      (do (log "File registration : FAILED")
-          (log "            Error : " (.getError resp)) 
+      (do (log "File registration    : FAILED")
+          (log "Error                : " (.getError resp)) 
           nil))))
 
 (defn with-auth
@@ -85,13 +90,14 @@
 (defn deploy
   [project service auth] 
   "Upload and deploy the current project to Jelastic"
-  (let [upload-resp (upload project service auth)
-        deploy-resp (.deploy service auth upload-resp)]
-    (if (every? zero? [(.getResult deploy-resp) (-> deploy-resp .getResponse .getResult)])
-      (do (log "Deploy file : SUCCESS")
-          (log " Deploy log : " (-> deploy-resp .getResponse .getResponses (aget 0) .getOut)))
-      (do (log "Deploy file : FAILED")
-          (log "      Error : " (-> deploy-resp .getResponse .getError))))))
+  (let [upload-resp (upload project service auth)]
+    (log line)
+    (let [deploy-resp (.deploy service auth upload-resp)]
+      (if (every? zero? [(.getResult deploy-resp) (-> deploy-resp .getResponse .getResult)])
+        (do (log "Deploy file         : SUCCESS")
+            (log "Deploy log          : " (-> deploy-resp .getResponse .getResponses (aget 0) .getOut)))
+        (do (log "Deploy file         : FAILED")
+            (log "Error               : " (-> deploy-resp .getResponse .getError)))))))
 
 (defn jelastic
   "Manage Jelastic service"

@@ -40,7 +40,7 @@ To upload and deploy the current target
 
 ## License
 
-Copyright © 2013 FIXME
+Copyright © 2013 Mysema
 
 Distributed under the Eclipse Public License, the same as Clojure.
 
