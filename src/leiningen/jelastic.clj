@@ -1,27 +1,81 @@
 (ns leiningen.jelastic
   (:use [leiningen.help :only (help-for)])
-  (:import [com.jelastic JelasticService] 
-           [org.apache.tools.ant Project]))
+  (:import [com.jelastic JelasticMojo] 
+           [org.apache.maven.plugin AbstractMojo]
+           [org.apache.maven.execution MavenSession]
+           [org.apache.maven.project MavenProject]
+           [org.apache.maven.plugin.logging Log]
+           [org.apache.maven.settings Settings]))
+
+
+(defn get-fields
+  "Returns all fields of given instance, including fields from supertypes"
+  [obj]
+  (remove nil? (flatten 
+                 (map #(seq (.getDeclaredFields %)) 
+                      (ancestors (.getClass obj))))))
+
+(defn set-private!
+  "Sets new value to the private field of given Java instance"
+  [obj field-name value]
+  (if-let [field (first 
+                   (filter #(= (name field-name) (.getName %)) 
+                           (get-fields obj)))]
+    (doto field
+      (.setAccessible true)
+      (.set obj value))
+    (throw 
+      (IllegalArgumentException. 
+        (str "No method found: " field-name)))))
+
+(defn get-private
+  "Gets value from the private field of given Java instance"
+  [obj field-name]
+  (if-let [field (first 
+                   (filter #(= (name field-name) (.getName %)) 
+                           (get-fields obj)))]
+    (do 
+      (.setAccessible field true)
+      (.get field obj))
+    (throw 
+      (IllegalArgumentException. 
+        (str "No method found: " field-name)))))
 
 (defn log [& s] (println (apply str s)))
 
 (def line (apply str (repeat 60 "-")))
 
-(def ant-project-proxy 
-  (proxy [Project] [] 
-    (log [s t] (log s))))
+(def maven-session-proxy
+  (proxy [MavenSession] 
+    [nil (Settings.) nil nil nil nil nil nil nil]))
+
+(def logger
+  (proxy [Log] []
+    (debug [s] (log s))
+    (info  [s] (log s))
+    ; TODO Will swallow the exception for now
+    (error [s e] (log s))))
+
+(def jelastic-service-proxy
+  (proxy [JelasticMojo] []
+    (getLog [] logger)))
 
 (defn jelastic-service
   [apihoster environment context]
-  (doto (JelasticService. ant-project-proxy)
-    (.setApiHoster apihoster)
-    (.setEnvironment environment)
-    (.setContext context)))
+  (doto jelastic-service-proxy 
+    (set-private! :api_hoster apihoster)
+    (set-private! :environment environment)
+    (set-private! :context context)
+    (set-private! :project maven-project-proxy)
+    (set-private! :mavenSession maven-session-proxy)))
 
 (defn authenticate
   [service email password]
   (log line)
-  (let [resp (.authentication service email password)]
+  (doto service
+    (set-private! :email email)
+    (set-private! :password password))
+  (let [resp (.authentication service)]
     (if (zero? (.getResult resp)) 
       (do (log "Authentication      : SUCCESS")
           (log "Session             : " (.getSession resp))
@@ -33,7 +87,7 @@
 
 (defn upload-file
   [service auth dir filename]
-  (doto service (.setDir dir) (.setFilename filename))
+  (set-private! service "artifactFile" (java.io.File. dir filename))
   (log line)
   (when-let [resp (try 
                   (.upload service auth) 
@@ -81,18 +135,16 @@
         ; TODO Is there better way to get project output?
         file    (str (:name project) "-" (:version project) ".war")
         upload-resp (upload-file service auth path file)]
-    ; TODO Cleaner way to do this?
-    (if (nil? upload-resp)
-      nil
-      (do (register-file service auth upload-resp)
-          upload-resp))))
+    (and 
+      upload-resp 
+      [upload-resp (register-file service auth upload-resp)])))
 
 (defn deploy
   [project service auth] 
   "Upload and deploy the current project to Jelastic"
-  (let [upload-resp (upload project service auth)]
+  (let [[upload-resp register-resp] (upload project service auth)]
     (log line)
-    (let [deploy-resp (.deploy service auth upload-resp)]
+    (let [deploy-resp (.deploy service auth upload-resp register-resp)]
       (if (every? zero? [(.getResult deploy-resp) (-> deploy-resp .getResponse .getResult)])
         (do (log "Deploy file         : SUCCESS")
             (log "Deploy log          : " (-> deploy-resp .getResponse .getResponses (aget 0) .getOut)))
