@@ -1,1 +1,0 @@
-"mvn install:install-file -DlocalRepositoryPath=repo -DgroupId=com.jelastic -DartifactId=ant-task -Dversion=1.1 -Dpackaging=jar -Dfile=jelastic-ant-task-1.1-SNAPSHOT.jar -DgeneratePom=true -DcreateChecksum=true" 
