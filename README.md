@@ -4,7 +4,7 @@ A Leiningen plugin for [Jelastic][1].
 
 ## Configuration
 
-To use lein-jelastic, you have to add following configuration to your
+To use lein-jelastic add the following configuration to your
 `project.clj` file.
 
 ```clojure
@@ -20,7 +20,7 @@ To use lein-jelastic, you have to add following configuration to your
 ```
 
 As storing user and password information in the project directly is generally not
-so good idea, you can store sensitive information on your `~/.lein/profiles.clj` file.
+so good idea, you can store sensitive information in your `~/.lein/profiles.clj` file.
 
 ```clojure
 {:user {:jelastic {:email "your@email.com" :password "XXXXXXX"}}}
@@ -28,13 +28,13 @@ so good idea, you can store sensitive information on your `~/.lein/profiles.clj`
 
 ## Upload
 
-To upload a current target to jelastic
+Upload current target to jelastic
 
     $ lein jelastic upload
     
 ## Deploy
 
-To upload and deploy the current target
+Upload and deploy current target
 
     $ lein jelastic deploy
 

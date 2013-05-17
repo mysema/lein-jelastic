@@ -16,7 +16,7 @@
                       (ancestors (.getClass obj))))))
 
 (defn set-private!
-  "Sets new value to the private field of given Java instance"
+  "Sets a new value to the private field of a given Java instance"
   [obj field-name value]
   (if-let [field (first 
                    (filter #(= (name field-name) (.getName %)) 
@@ -29,7 +29,7 @@
         (str "No method found: " field-name)))))
 
 (defn get-private
-  "Gets value from the private field of given Java instance"
+  "Gets value from a private field of a given Java instance"
   [obj field-name]
   (if-let [field (first 
                    (filter #(= (name field-name) (.getName %)) 
@@ -90,11 +90,11 @@
   (set-private! service "artifactFile" (java.io.File. dir filename))
   (log line)
   (when-let [resp (try 
-                  (.upload service auth) 
-                  (catch Exception e
-                    (do (log "File upload         : FAILED")
-                        (log "File does not exist : " dir filename)
-                        nil)))]
+                    (.upload service auth) 
+                    (catch Exception e
+                      (do (log "File upload         : FAILED")
+                          (log "File does not exist : " dir filename)
+                          nil)))]
     (if (zero? (.getResult resp))
       (do (log "File upload          : SUCCESS")
           (log "File url             : " (.getFile resp))
@@ -129,8 +129,8 @@
     (f service auth)))
 
 (defn upload
-  [project service auth] 
   "Upload the current project to Jelastic"
+  [project service auth] 
   (let [path    (str (:target-path project) "/")
         ; TODO Is there better way to get project output?
         file    (str (:name project) "-" (:version project) ".war")
@@ -140,8 +140,8 @@
       [upload-resp (register-file service auth upload-resp)])))
 
 (defn deploy
-  [project service auth] 
   "Upload and deploy the current project to Jelastic"
+  [project service auth] 
   (let [[upload-resp register-resp] (upload project service auth)]
     (log line)
     (let [deploy-resp (.deploy service auth upload-resp register-resp)]
