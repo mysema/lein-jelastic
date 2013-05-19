@@ -4,6 +4,7 @@
            [org.apache.maven.plugin AbstractMojo]
            [org.apache.maven.execution MavenSession]
            [org.apache.maven.project MavenProject]
+           [org.apache.maven.model Model]
            [org.apache.maven.plugin.logging Log]
            [org.apache.maven.settings Settings]))
 
@@ -45,9 +46,16 @@
 
 (def line (apply str (repeat 60 "-")))
 
+(def packaging "war")
+
 (def maven-session-proxy
   (proxy [MavenSession] 
     [nil (Settings.) nil nil nil nil nil nil nil]))
+ 
+(def maven-project-proxy
+  (proxy [MavenProject] 
+    [(doto (Model.)
+       (.setPackaging packaging))]))
 
 (def logger
   (proxy [Log] []
@@ -86,14 +94,15 @@
           (throw (Exception. (.getError resp)))))))
 
 (defn upload-file
-  [service auth dir filename]
-  (set-private! service "artifactFile" (java.io.File. dir filename))
+  [service auth dir finalname]
+  (set-private! service "finalName" finalname)
+  (set-private! service "outputDirectory" (java.io.File. dir))
   (log line)
   (when-let [resp (try 
                     (.upload service auth) 
                     (catch Exception e
                       (do (log "File upload         : FAILED")
-                          (log "File does not exist : " dir filename)
+                          (log "File does not exist : " dir finalname "." packaging)
                           nil)))]
     (if (zero? (.getResult resp))
       (do (log "File upload          : SUCCESS")
@@ -132,8 +141,7 @@
   "Upload the current project to Jelastic"
   [project service auth] 
   (let [path    (str (:target-path project) "/")
-        ; TODO Is there better way to get project output?
-        file    (str (:name project) "-" (:version project) ".war")
+        file    (str (:name project) "-" (:version project))
         upload-resp (upload-file service auth path file)]
     (and 
       upload-resp 
