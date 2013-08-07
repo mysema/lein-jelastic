@@ -11,17 +11,10 @@
 (defn get-fields
   "Returns all fields of given instance, including fields from supertypes"
   [obj]
-  (remove nil? (flatten 
-                 (map #(seq (.getDeclaredFields %)) 
-                      (ancestors (.getClass obj))))))
-
-(comment
-  
-  ; FIXME: `get-fields` grabs only the ancestors of the class, not the
-  ; actual class:
-  (ancestors java.lang.String) ; => #{java.lang.Comparable java.lang.Object java.lang.CharSequence java.io.Serializable}
-
-  )
+  (let [cls (.getClass obj)]
+    (remove nil? (flatten 
+                   (map #(seq (.getDeclaredFields %)) 
+                        (cons cls (ancestors cls)))))))
 
 (defn set-private!
   "Sets a new value to the private field of a given Java instance"
