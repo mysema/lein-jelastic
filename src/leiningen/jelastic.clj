@@ -137,6 +137,18 @@
         auth    (authenticate service email password)]
     (f service auth)))
 
+(defn default-filename
+  [project]
+  (str (:name project) "-" (:version project)))
+
+(defn filename
+  "Creates the filename of the uploaded file,
+   allows customization through :custom-filename function from 
+   project map"
+  [project]
+  (let [custom-filename-fn (get-in project [:jelastic :custom-filename])] 
+    ((or custom-filename-fn default-filename) project)))
+
 (defn upload
   "Upload the current project to Jelastic"
   [project service auth] 
