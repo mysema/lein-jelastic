@@ -1,5 +1,5 @@
 
-(defproject lein-jelastic "0.1.0"
+(defproject lein-jelastic "0.1.1"
   :description "Manage jelastic service through leiningen"
   :url "https://github.com/mysema/lein-jelastic"
   :license {:name "Eclipse Public License"
