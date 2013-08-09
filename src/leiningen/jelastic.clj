@@ -98,6 +98,7 @@
   (set-private! service "finalName" finalname)
   (set-private! service "outputDirectory" (java.io.File. dir))
   (log line)
+  (log "Trying to upload file  : " finalname "." packaging)
   (when-let [resp (try 
                     (.upload service auth) 
                     (catch Exception e
@@ -153,7 +154,7 @@
   "Upload the current project to Jelastic"
   [project service auth] 
   (let [path    (str (:target-path project) "/")
-        file    (str (:name project) "-" (:version project))
+        file    (filename project)
         upload-resp (upload-file service auth path file)]
     (and 
       upload-resp 
