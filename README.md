@@ -8,7 +8,7 @@ To use lein-jelastic add the following configuration to your
 `project.clj` file.
 
 ```clojure
-:plugins [[lein-jelastic "0.1.1"]]
+:plugins [[lein-jelastic "0.1.2"]]
 
 :jelastic {:apihoster "app.jelastic.provider.com"
            :email "your@mail.com"
