@@ -16,7 +16,7 @@ To use lein-jelastic add the following configuration to your
            :environment "myapp"
            ; Optionals 
            ; :context "mycontext"
-           ; Custom filename can be set for example to match ring uberjar output
+           ; Custom filename can be set for example to match ring uberwar output
            ; :custom-filename ~(fn [proj]
            ;                    (str (:name proj) "-" (:version proj) "-STANDALONE")) 
            }
