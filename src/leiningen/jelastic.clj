@@ -148,7 +148,7 @@
    project map"
   [project]
   (let [custom-filename-fn (get-in project [:jelastic :custom-filename])] 
-    ((or custom-filename-fn default-filename) project)))
+    ((or (eval custom-filename-fn) default-filename) project)))
 
 (defn upload
   "Upload the current project to Jelastic"
